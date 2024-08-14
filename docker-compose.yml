@@ -1,0 +1,70 @@
+version: '3'
+services:
+  wazuh:
+    image: wazuh/wazuh:4.2.7
+    hostname: wazuh
+    networks:
+      - macvlan_net
+    ports:
+      - "1514:1514/udp"
+      - "1515:1515"
+      - "514:514/udp"
+      - "55000:55000"
+      - "55000:55000/udp"
+
+  wazuh-kibana:
+    image: wazuh/wazuh-kibana:4.2.7
+    networks:
+      - macvlan_net
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    networks:
+      - macvlan_net
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+
+  suricata:
+    image: jasonish/suricata:latest
+    networks:
+      - macvlan_net
+    command: ["-i", "eth0"]
+    volumes:
+      - ./suricata:/etc/suricata
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    ports:
+      - "3000:3000"
+
+  attack-container:
+    image: lab/attack-container
+    networks:
+      - wan_net
+
+  gateway:
+    image: alpine
+    container_name: gateway
+    networks:
+      - macvlan_net
+      - wan_net
+    command: sh -c "apk add iptables && iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT && iptables -A FORWARD -i eth1 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT && tail -f /dev/null"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+networks:
+  wan_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+  macvlan_net:
+    external: true
