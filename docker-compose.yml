@@ -45,13 +45,11 @@ services:
       - "3000:3000"
 
   attack:
-    tty: true
     image: lab/attack-container
     networks:
       - wan_net
 
   gateway:
-    tty: true
     image: alpine
     container_name: gateway
     networks:
@@ -65,9 +63,6 @@ services:
 networks:
   wan_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.18.0.0/24
   lan_net:
     driver: bridge
     ipam:
