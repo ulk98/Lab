@@ -9,3 +9,7 @@ sudo apt install docker.io docker-compose -y
 #Start and enable Docker
 sudo systemctl start docker
 sudo systemctl enable docker
+
+#Install qemu-kvm and all dependencies
+sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager -y
+
