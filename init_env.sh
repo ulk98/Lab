@@ -13,3 +13,5 @@ sudo systemctl enable docker
 #Install qemu-kvm and all dependencies
 sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager -y
 
+#Create docker lab network
+docker network create --driver bridge --subnet=172.40.0.0/24 lab_net

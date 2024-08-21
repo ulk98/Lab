@@ -4,7 +4,8 @@ services:
     image: wazuh/wazuh:4.2.7
     hostname: wazuh
     networks:
-      - lan_net
+      lab_net:
+        ipv4_address: 172.40.0.2
     ports:
       - "1514:1514/udp"
       - "1515:1515"
@@ -15,7 +16,8 @@ services:
   wazuh-kibana:
     image: wazuh/wazuh-kibana:4.2.7
     networks:  
-      - lan_net
+      lab_net:
+        ipv4_address: 172.40.0.3
     ports:
       - "5601:5601"
     environment:
@@ -24,7 +26,8 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
     networks:
-      - lan_net
+      lab_net:
+        ipv4_address: 172.40.0.4
     environment:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
@@ -34,7 +37,8 @@ services:
   suricata:
     image: jasonish/suricata:latest
     networks:
-      - lan_net
+      lab_net:
+        ipv4_address: 172.40.0.5
     command: ["-i", "eth0"]
     volumes:
       - ./suricata:/etc/suricata
@@ -45,26 +49,29 @@ services:
       - "3000:3000"
 
   attack:
-    image: lab/attack-container
+    image: test/kali_attack
     networks:
-      - wan_net
+      lab_net:
+        ipv4_address: 172.40.0.201
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    privileged: true
+    stdin_open: true
+    command: /bin/sh
 
   gateway:
-    image: alpine
+    image: test/lab_gateway
     container_name: gateway
     networks:
-      - lan_net
-      - wan_net
-    command: sh -c "apk add iptables && iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && iptables -A FORWARD -i eth0 -o eth1 -j ACCEPT && iptables -A FORWARD -i eth1 -o eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT && tail -f /dev/null"
+      lab_net:
+        ipv4_address: 172.40.0.200
+    privileged: true
+    command: sh -c "sleep infinity"
     cap_add:
       - NET_ADMIN
       - NET_RAW
 
 networks:
-  wan_net:
-    driver: bridge
-  lan_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
+  lab_net:
+    external: true
